@@ -37,4 +37,4 @@ extern Load< LitColorTextureProgram > lit_color_texture_program;
 
 //For convenient scene-graph setup, copy this object:
 // NOTE: by default, has texture bound to 1-pixel white texture -- so it's okay to use with vertex-color-only meshes.
-extern Scene::Drawable::Pipeline lit_color_texture_program_pipeline;
+extern Drawable::Pipeline lit_color_texture_program_pipeline;

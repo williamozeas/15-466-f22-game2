@@ -31,4 +31,4 @@ struct ShowMeshesProgram {
 };
 
 extern Load< ShowMeshesProgram > show_meshes_program;
-extern Scene::Drawable::Pipeline show_meshes_program_pipeline; //Drawable::Pipeline already initialized with proper uniform locations for this program.
+extern Drawable::Pipeline show_meshes_program_pipeline; //Drawable::Pipeline already initialized with proper uniform locations for this program.

@@ -1,3 +1,4 @@
+#pragma once
 #include "Mode.hpp"
 
 #include "Scene.hpp"
@@ -15,6 +16,7 @@ struct PlayMode : Mode {
 	virtual bool handle_event(SDL_Event const &, glm::uvec2 const &window_size) override;
 	virtual void update(float elapsed) override;
 	virtual void draw(glm::uvec2 const &drawable_size) override;
+    virtual void reset();
 
 	//----- game state -----
 
@@ -28,13 +30,13 @@ struct PlayMode : Mode {
 	Scene scene;
 
 	//hexapod leg to wobble:
-	Scene::Transform *hip = nullptr;
-	Scene::Transform *upper_leg = nullptr;
-	Scene::Transform *lower_leg = nullptr;
-	glm::quat hip_base_rotation;
-	glm::quat upper_leg_base_rotation;
-	glm::quat lower_leg_base_rotation;
-	float wobble = 0.0f;
+//	Transform *hip = nullptr;
+//	Transform *upper_leg = nullptr;
+//	Transform *lower_leg = nullptr;
+//	glm::quat hip_base_rotation;
+//	glm::quat upper_leg_base_rotation;
+//	glm::quat lower_leg_base_rotation;
+//	float wobble = 0.0f;
 	
 	//camera:
 	Scene::Camera *camera = nullptr;

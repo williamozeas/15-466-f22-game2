@@ -9,7 +9,7 @@
 
 //-------------------------
 
-glm::mat4x3 Scene::Transform::make_local_to_parent() const {
+glm::mat4x3 Transform::make_local_to_parent() const {
 	//compute:
 	//   translate   *   rotate    *   scale
 	// [ 1 0 0 p.x ]   [       0 ]   [ s.x 0 0 0 ]
@@ -26,7 +26,7 @@ glm::mat4x3 Scene::Transform::make_local_to_parent() const {
 	);
 }
 
-glm::mat4x3 Scene::Transform::make_parent_to_local() const {
+glm::mat4x3 Transform::make_parent_to_local() const {
 	//compute:
 	//   1/scale       *    rot^-1   *  translate^-1
 	// [ 1/s.x 0 0 0 ]   [       0 ]   [ 0 0 0 -p.x ]
@@ -56,14 +56,14 @@ glm::mat4x3 Scene::Transform::make_parent_to_local() const {
 	);
 }
 
-glm::mat4x3 Scene::Transform::make_local_to_world() const {
+glm::mat4x3 Transform::make_local_to_world() const {
 	if (!parent) {
 		return make_local_to_parent();
 	} else {
 		return parent->make_local_to_world() * glm::mat4(make_local_to_parent()); //note: glm::mat4(glm::mat4x3) pads with a (0,0,0,1) row
 	}
 }
-glm::mat4x3 Scene::Transform::make_world_to_local() const {
+glm::mat4x3 Transform::make_world_to_local() const {
 	if (!parent) {
 		return make_parent_to_local();
 	} else {
@@ -92,7 +92,7 @@ void Scene::draw(glm::mat4 const &world_to_clip, glm::mat4x3 const &world_to_lig
 	//Iterate through all drawables, sending each one to OpenGL:
 	for (auto const &drawable : drawables) {
 		//Reference to drawable's pipeline for convenience:
-		Scene::Drawable::Pipeline const &pipeline = drawable.pipeline;
+		Drawable::Pipeline const &pipeline = drawable.pipeline;
 
 		//skip any drawables without a shader program set:
 		if (pipeline.program == 0) continue;

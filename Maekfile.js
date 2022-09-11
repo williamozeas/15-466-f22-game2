@@ -59,7 +59,7 @@ if (maek.OS === "windows") {
 	);
 } else if (maek.OS === "macos") {
 	maek.options.CPPFlags.push(
-		`-O2`, //optimize
+		// `-O2`, //optimize
 		//include paths for nest libraries:
 		`-I${NEST_LIBS}/SDL2/include/SDL2`, `-D_THREAD_SAFE`, //the output of sdl-config --cflags
 		`-I${NEST_LIBS}/glm/include`,
@@ -119,7 +119,8 @@ const common_names = [
 	maek.CPP('gl_compile_program.cpp'),
 	maek.CPP('Mode.cpp'),
 	maek.CPP('GL.cpp'),
-	maek.CPP('Load.cpp')
+	maek.CPP('Load.cpp'),
+	maek.CPP('Car.cpp')
 ];
 
 const show_mesh_names = [

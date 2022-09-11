@@ -3,7 +3,7 @@
 #include "gl_compile_program.hpp"
 #include "gl_errors.hpp"
 
-Scene::Drawable::Pipeline show_meshes_program_pipeline;
+Drawable::Pipeline show_meshes_program_pipeline;
 
 Load< ShowMeshesProgram > show_meshes_program(LoadTagEarly, []() -> ShowMeshesProgram * {
 	auto *ret = new ShowMeshesProgram();

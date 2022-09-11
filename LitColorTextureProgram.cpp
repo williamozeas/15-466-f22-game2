@@ -3,7 +3,7 @@
 #include "gl_compile_program.hpp"
 #include "gl_errors.hpp"
 
-Scene::Drawable::Pipeline lit_color_texture_program_pipeline;
+Drawable::Pipeline lit_color_texture_program_pipeline;
 
 Load< LitColorTextureProgram > lit_color_texture_program(LoadTagEarly, []() -> LitColorTextureProgram const * {
 	LitColorTextureProgram *ret = new LitColorTextureProgram();

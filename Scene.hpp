@@ -11,6 +11,7 @@
  */
 
 #include "GL.hpp"
+#include "Car.hpp"
 
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
@@ -22,64 +23,70 @@
 #include <vector>
 #include <unordered_map>
 
+struct Car;
+
+struct Transform {
+    //Transform names are useful for debugging and looking up locations in a loaded scene:
+    std::string name;
+
+    //The core function of a transform is to store a transformation in the world:
+    glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
+    glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f); //n.b. wxyz init order
+    glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
+
+    //The transform above may be relative to some parent transform:
+    Transform *parent = nullptr;
+
+    //It is often convenient to construct matrices representing this transformation:
+    // ..relative to its parent:
+    glm::mat4x3 make_local_to_parent() const;
+    glm::mat4x3 make_parent_to_local() const;
+    // ..relative to the world:
+    glm::mat4x3 make_local_to_world() const;
+    glm::mat4x3 make_world_to_local() const;
+
+    //since hierarchy is tracked through pointers, copy-constructing a transform  is not advised:
+    Transform(Transform const &) = delete;
+    //if we delete some constructors, we need to let the compiler know that the default constructor is still okay:
+    Transform() = default;
+};
+
+struct Drawable {
+    //a 'Drawable' attaches attribute data to a transform:
+    Drawable(Transform *transform_) : transform(transform_) { assert(transform); }
+    bool isCar = false;
+    Transform * transform;
+
+    //Contains all the data needed to run the OpenGL pipeline:
+    struct Pipeline {
+        GLuint program = 0; //shader program; passed to glUseProgram
+
+        //attributes:
+        GLuint vao = 0; //attrib->buffer mapping; passed to glBindVertexArray
+
+        GLenum type = GL_TRIANGLES; //what sort of primitive to draw; passed to glDrawArrays
+        GLuint start = 0; //first vertex to draw; passed to glDrawArrays
+        GLuint count = 0; //number of vertices to draw; passed to glDrawArrays
+
+        //uniforms:
+        GLuint OBJECT_TO_CLIP_mat4 = -1U; //uniform location for object to clip space matrix
+        GLuint OBJECT_TO_LIGHT_mat4x3 = -1U; //uniform location for object to light space (== world space) matrix
+        GLuint NORMAL_TO_LIGHT_mat3 = -1U; //uniform location for normal to light space (== world space) matrix
+
+        std::function< void() > set_uniforms; //(optional) function to set any other useful uniforms
+
+        //texture objects to bind for the first TextureCount textures:
+        enum : uint32_t { TextureCount = 4 };
+        struct TextureInfo {
+            GLuint texture = 0;
+            GLenum target = GL_TEXTURE_2D;
+        } textures[TextureCount];
+    } pipeline;
+};
+
+
+
 struct Scene {
-	struct Transform {
-		//Transform names are useful for debugging and looking up locations in a loaded scene:
-		std::string name;
-
-		//The core function of a transform is to store a transformation in the world:
-		glm::vec3 position = glm::vec3(0.0f, 0.0f, 0.0f);
-		glm::quat rotation = glm::quat(1.0f, 0.0f, 0.0f, 0.0f); //n.b. wxyz init order
-		glm::vec3 scale = glm::vec3(1.0f, 1.0f, 1.0f);
-
-		//The transform above may be relative to some parent transform:
-		Transform *parent = nullptr;
-
-		//It is often convenient to construct matrices representing this transformation:
-		// ..relative to its parent:
-		glm::mat4x3 make_local_to_parent() const;
-		glm::mat4x3 make_parent_to_local() const;
-		// ..relative to the world:
-		glm::mat4x3 make_local_to_world() const;
-		glm::mat4x3 make_world_to_local() const;
-
-		//since hierarchy is tracked through pointers, copy-constructing a transform  is not advised:
-		Transform(Transform const &) = delete;
-		//if we delete some constructors, we need to let the compiler know that the default constructor is still okay:
-		Transform() = default;
-	};
-
-	struct Drawable {
-		//a 'Drawable' attaches attribute data to a transform:
-		Drawable(Transform *transform_) : transform(transform_) { assert(transform); }
-		Transform * transform;
-
-		//Contains all the data needed to run the OpenGL pipeline:
-		struct Pipeline {
-			GLuint program = 0; //shader program; passed to glUseProgram
-
-			//attributes:
-			GLuint vao = 0; //attrib->buffer mapping; passed to glBindVertexArray
-
-			GLenum type = GL_TRIANGLES; //what sort of primitive to draw; passed to glDrawArrays
-			GLuint start = 0; //first vertex to draw; passed to glDrawArrays
-			GLuint count = 0; //number of vertices to draw; passed to glDrawArrays
-
-			//uniforms:
-			GLuint OBJECT_TO_CLIP_mat4 = -1U; //uniform location for object to clip space matrix
-			GLuint OBJECT_TO_LIGHT_mat4x3 = -1U; //uniform location for object to light space (== world space) matrix
-			GLuint NORMAL_TO_LIGHT_mat3 = -1U; //uniform location for normal to light space (== world space) matrix
-
-			std::function< void() > set_uniforms; //(optional) function to set any other useful uniforms
-
-			//texture objects to bind for the first TextureCount textures:
-			enum : uint32_t { TextureCount = 4 };
-			struct TextureInfo {
-				GLuint texture = 0;
-				GLenum target = GL_TEXTURE_2D;
-			} textures[TextureCount];
-		} pipeline;
-	};
 
 	struct Camera {
 		//a 'Camera' attaches camera data to a transform:
@@ -121,6 +128,7 @@ struct Scene {
 	std::list< Drawable > drawables;
 	std::list< Camera > cameras;
 	std::list< Light > lights;
+    std::vector< Car > cars;
 
 	//The "draw" function provides a convenient way to pass all the things in a scene to OpenGL:
 	void draw(Camera const &camera) const;

@@ -3,7 +3,7 @@
 #include "gl_compile_program.hpp"
 #include "gl_errors.hpp"
 
-Scene::Drawable::Pipeline show_scene_program_pipeline;
+Drawable::Pipeline show_scene_program_pipeline;
 
 Load< ShowSceneProgram > show_scene_program(LoadTagEarly, []() -> ShowSceneProgram * {
 	auto *ret = new ShowSceneProgram();
