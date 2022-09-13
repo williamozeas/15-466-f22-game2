@@ -43,23 +43,20 @@ Load< Scene > main_scene(LoadTagDefault, []() -> Scene const * {
 PlayMode::PlayMode() : scene(*main_scene) {
     for(auto &drawable : scene.drawables) {
         if(drawable.transform->name.substr(0,3) == "car") {
-            scene.cars.emplace_back(&drawable);
-            scene.cars.back().drawable->isCar = true;
+            if(drawable.transform->name.substr(4,6) == "player") {
+                uint32_t num = (uint32_t)std::stoi(drawable.transform->name.substr(11,drawable.transform->name.size() - 11));
+                cars.emplace_back(&drawable, num);
+                num_player_cars++;
+            } else {
+                cars.emplace_back(&drawable);
+            }
         }
     }
-	//get pointers to leg for convenience:
-//	for (auto &transform : scene.transforms) {
-//		if (transform.name == "Hip.FL") hip = &transform;
-//		else if (transform.name == "UpperLeg.FL") upper_leg = &transform;
-//		else if (transform.name == "LowerLeg.FL") lower_leg = &transform;
-//	}
-//	if (hip == nullptr) throw std::runtime_error("Hip not found.");
-//	if (upper_leg == nullptr) throw std::runtime_error("Upper leg not found.");
-//	if (lower_leg == nullptr) throw std::runtime_error("Lower leg not found.");
 
-//	hip_base_rotation = hip->rotation;
-//	upper_leg_base_rotation = upper_leg->rotation;
-//	lower_leg_base_rotation = lower_leg->rotation;
+    //sort for ease of use with player cars
+    std::sort(cars.begin(), cars.end(), [&](Car &a, Car &b) {
+        return a.index < b.index;
+    });
 
 	//get pointer to camera for convenience:
 	if (scene.cameras.size() != 1) throw std::runtime_error("Expecting scene to have exactly one camera, but it has " + std::to_string(scene.cameras.size()));
@@ -70,7 +67,10 @@ PlayMode::~PlayMode() {
 }
 
 bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size) {
-
+    auto numKeys = { SDLK_1, SDLK_2, SDLK_3, SDLK_4, SDLK_5, SDLK_6, SDLK_7, SDLK_8, SDLK_9 };
+    if(currentState == WinState) {
+        return false;
+    }
 	if (evt.type == SDL_KEYDOWN) {
 		if (evt.key.keysym.sym == SDLK_ESCAPE) {
 			SDL_SetRelativeMouseMode(SDL_FALSE);
@@ -91,7 +91,13 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.downs += 1;
 			down.pressed = true;
 			return true;
-		}
+		} else {
+            for(uint32_t i = 0; i < numKeys.size() && i < num_player_cars; i++) {
+                if(evt.key.keysym.sym == *(numKeys.begin() + i)) {
+                    cars.at(i).jump_back();
+                }
+            }
+        }
 	} else if (evt.type == SDL_KEYUP) {
 		if (evt.key.keysym.sym == SDLK_a) {
 			left.pressed = false;
@@ -106,33 +112,15 @@ bool PlayMode::handle_event(SDL_Event const &evt, glm::uvec2 const &window_size)
 			down.pressed = false;
 			return true;
 		}
-	} else if (evt.type == SDL_MOUSEBUTTONDOWN) {
-		if (SDL_GetRelativeMouseMode() == SDL_FALSE) {
-			SDL_SetRelativeMouseMode(SDL_TRUE);
-			return true;
-		}
-	} else if (evt.type == SDL_MOUSEMOTION) {
-		if (SDL_GetRelativeMouseMode() == SDL_TRUE) {
-//			glm::vec2 motion = glm::vec2(
-//				evt.motion.xrel / float(window_size.y),
-//				-evt.motion.yrel / float(window_size.y)
-//			);
-//			camera->transform->rotation = glm::normalize(
-//				camera->transform->rotation
-//				* glm::angleAxis(-motion.x * camera->fovy, glm::vec3(0.0f, 1.0f, 0.0f))
-//				* glm::angleAxis(motion.y * camera->fovy, glm::vec3(1.0f, 0.0f, 0.0f))
-//			);
-			return true;
-		}
 	}
 
 	return false;
 }
 
-bool check_car_collisions(Scene &scene) {
-    for(uint32_t i = 0; i < scene.cars.size(); i++) {
-        for(uint32_t j = i + 1; j < scene.cars.size(); j++) {
-            if(scene.cars.at(i).check_car_collision(scene.cars.at(j))) {
+bool check_car_collisions(std::vector<Car> cars) {
+    for(uint32_t i = 0; i < cars.size(); i++) {
+        for(uint32_t j = i + 1; j < cars.size(); j++) {
+            if(cars.at(i).check_car_collision(cars.at(j))) {
                 return true;
             }
         }
@@ -142,34 +130,21 @@ bool check_car_collisions(Scene &scene) {
 }
 
 void PlayMode::update(float elapsed) {
+    total_time += elapsed;
+    if(total_time >= TIME_TO_WIN) {
+        currentState = WinState;
+        return;
+    }
+
     //update car pos
-    for(Car &car : scene.cars) {
+    for(Car &car : cars) {
         car.update(elapsed);
     }
 
     //check car collision
-    if(check_car_collisions(scene)) {
-//        reset();
-        std::cout << "collision!\n";
+    if(check_car_collisions(cars)) {
+        reset();
     }
-
-
-	//slowly rotates through [0,1):
-//	wobble += elapsed / 10.0f;
-//	wobble -= std::floor(wobble);
-//
-//	hip->rotation = hip_base_rotation * glm::angleAxis(
-//		glm::radians(5.0f * std::sin(wobble * 2.0f * float(M_PI))),
-//		glm::vec3(0.0f, 1.0f, 0.0f)
-//	);
-//	upper_leg->rotation = upper_leg_base_rotation * glm::angleAxis(
-//		glm::radians(7.0f * std::sin(wobble * 2.0f * 2.0f * float(M_PI))),
-//		glm::vec3(0.0f, 0.0f, 1.0f)
-//	);
-//	lower_leg->rotation = lower_leg_base_rotation * glm::angleAxis(
-//		glm::radians(10.0f * std::sin(wobble * 3.0f * 2.0f * float(M_PI))),
-//		glm::vec3(0.0f, 0.0f, 1.0f)
-//	);
 
 	//move camera:
 	{
@@ -223,32 +198,48 @@ void PlayMode::draw(glm::uvec2 const &drawable_size) {
 
 	scene.draw(*camera);
 
-	{ //use DrawLines to overlay some text:
-		glDisable(GL_DEPTH_TEST);
-		float aspect = float(drawable_size.x) / float(drawable_size.y);
-		DrawLines lines(glm::mat4(
-			1.0f / aspect, 0.0f, 0.0f, 0.0f,
-			0.0f, 1.0f, 0.0f, 0.0f,
-			0.0f, 0.0f, 1.0f, 0.0f,
-			0.0f, 0.0f, 0.0f, 1.0f
-		));
+    if(currentState == WinState) {
+        //win
+        glDisable(GL_DEPTH_TEST);
+        float aspect = float(drawable_size.x) / float(drawable_size.y);
+        DrawLines lines(glm::mat4(
+                1.0f / aspect, 0.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f
+        ));
 
-		constexpr float H = 0.09f;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
-			glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
-			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-			glm::u8vec4(0x00, 0x00, 0x00, 0x00));
-		float ofs = 2.0f / drawable_size.y;
-		lines.draw_text("Mouse motion rotates camera; WASD moves; escape ungrabs mouse",
-			glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
-			glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
-			glm::u8vec4(0xff, 0xff, 0xff, 0x00));
-	}
+        constexpr float H = 0.9f;
+        lines.draw_text("You win!",
+                        glm::vec3(-aspect + 0.1f * H, -1.0f + 0.1f * H, 0.0),
+                        glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+                        glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+    } else { //use DrawLines to overlay some text:
+        glDisable(GL_DEPTH_TEST);
+        float aspect = float(drawable_size.x) / float(drawable_size.y);
+        DrawLines lines(glm::mat4(
+                1.0f / aspect, 0.0f, 0.0f, 0.0f,
+                0.0f, 1.0f, 0.0f, 0.0f,
+                0.0f, 0.0f, 1.0f, 0.0f,
+                0.0f, 0.0f, 0.0f, 1.0f
+        ));
+
+        constexpr float H = 0.09f;
+        lines.draw_text("WASD moves; number keys move cars",
+                        glm::vec3(-aspect + 0.1f * H, -1.0 + 0.1f * H, 0.0),
+                        glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+                        glm::u8vec4(0x00, 0x00, 0x00, 0x00));
+        float ofs = 2.0f / drawable_size.y;
+        lines.draw_text("WASD moves; number keys move cars",
+                        glm::vec3(-aspect + 0.1f * H + ofs, -1.0 + + 0.1f * H + ofs, 0.0),
+                        glm::vec3(H, 0.0f, 0.0f), glm::vec3(0.0f, H, 0.0f),
+                        glm::u8vec4(0xff, 0xff, 0xff, 0x00));
+    }
 }
 
 void PlayMode::reset() {
-    //TODO: reset game
-    for(Car car : scene.cars) {
+    total_time = 0;
+    for(Car &car : cars) {
         car.reset();
     }
 }

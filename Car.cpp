@@ -5,15 +5,21 @@
 #include <iostream>
 #include "Car.hpp"
 
-Car::Car(Drawable *_drawable, glm::vec2 _bb_size) : drawable(_drawable) {
-    std::cout << "car made!\n";
+Car::Car(Drawable *_drawable, glm::vec2 _bb_size, uint32_t _index) : drawable(_drawable), index(_index), original_pos(_drawable->transform->position) {
     assert(drawable->transform);
     bb_size = _bb_size;
-    original_pos = drawable->transform->position;
 }
 
-Car::Car(Drawable *_drawable) : drawable(_drawable) {
-    Car(_drawable, bb_size);
+Car::Car(Drawable *_drawable, uint32_t _index) : drawable(_drawable), index(_index), original_pos(_drawable->transform->position) {
+    Car(_drawable, bb_size, index);
+}
+
+Car::Car(const Car &car) : drawable(car.drawable), index(car.index), original_pos(car.drawable->transform->position) {
+    Car(car.drawable, car.index);
+}
+
+Car::~Car() {
+    //delete object
 }
 
 void Car::update(float elapsed) {
@@ -47,15 +53,22 @@ bool Car::check_car_collision(Car &other) {
         y_coll = true;
     }
 
+    if(x_coll && y_coll) {
+        std::cout << transform->name << " collided with " << other_transform->name << std::endl;
+    }
+
     return x_coll && y_coll;
 }
 
 void Car::jump_back() {
-    drawable->transform->position -= jump_vec;
+    if(jump_count < MAX_JUMP_COUNT) {
+        drawable->transform->position -= drawable->transform->make_local_to_world() * glm::vec4(jump_vec, 0);
+        jump_count++;
+    }
 }
 
 void Car::reset() {
     drawable->transform->position = original_pos;
-    std::cout << "reset" <<std::endl;
+    jump_count = 0;
 }
 

@@ -26,17 +26,21 @@ struct PlayMode : Mode {
 		uint8_t pressed = 0;
 	} left, right, down, up;
 
+    enum GameState {
+        PlayState,
+        WinState
+    };
+
+    GameState currentState = PlayState;
+
 	//local copy of the game scene (so code can change it during gameplay):
 	Scene scene;
 
-	//hexapod leg to wobble:
-//	Transform *hip = nullptr;
-//	Transform *upper_leg = nullptr;
-//	Transform *lower_leg = nullptr;
-//	glm::quat hip_base_rotation;
-//	glm::quat upper_leg_base_rotation;
-//	glm::quat lower_leg_base_rotation;
-//	float wobble = 0.0f;
+    const float TIME_TO_WIN = 30.0f;
+	float total_time = 0;
+
+    std::vector< Car > cars;
+    uint32_t num_player_cars = 0;
 	
 	//camera:
 	Scene::Camera *camera = nullptr;

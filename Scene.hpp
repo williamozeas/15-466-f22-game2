@@ -54,7 +54,6 @@ struct Transform {
 struct Drawable {
     //a 'Drawable' attaches attribute data to a transform:
     Drawable(Transform *transform_) : transform(transform_) { assert(transform); }
-    bool isCar = false;
     Transform * transform;
 
     //Contains all the data needed to run the OpenGL pipeline:
@@ -128,7 +127,6 @@ struct Scene {
 	std::list< Drawable > drawables;
 	std::list< Camera > cameras;
 	std::list< Light > lights;
-    std::vector< Car > cars;
 
 	//The "draw" function provides a convenient way to pass all the things in a scene to OpenGL:
 	void draw(Camera const &camera) const;
